@@ -81,6 +81,10 @@
     font-weight: 600;
 }
 
+.ai-pricing-mode-panel.is-hidden {
+    display: none;
+}
+
 .ai-template-option {
     display: block;
     border: 1px solid #dcdcde;
@@ -327,6 +331,60 @@
 #ai-manual-preview .ai-pricing-wrapper {
     margin: 0;
     padding: 24px;
+}
+
+#ai-ai-preview .ai-pricing-wrapper {
+    margin: 0;
+    padding: 24px;
+}
+
+.ai-pro-lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(246, 247, 247, 0.72);
+    backdrop-filter: blur(3px);
+}
+
+#ai-ai-preview .ai-pricing-wrapper {
+    position: relative;
+}
+
+.ai-pro-lock-overlay-card {
+    max-width: 460px;
+    width: 100%;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid #dcdcde;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+}
+
+.ai-pro-lock-overlay-card strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.ai-pro-lock-overlay-card p {
+    margin: 0;
+    color: #50575e;
+}
+
+.ai-ai-preview-editable {
+    display: inline-block;
+    min-width: 24px;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ai-ai-preview-editable:hover,
+.ai-ai-preview-editable:focus {
+    outline: none;
+    border-bottom-color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
 }
 
 .ai-manual-preview-wrapper .ai-pricing-title {

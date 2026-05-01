@@ -1,0 +1,47 @@
+(function (window, $) {
+    "use strict";
+
+    const api = window.AIPricingManualBuilder && window.AIPricingManualBuilder.ns ? window.AIPricingManualBuilder.ns() : (window.AIPricingManualBuilder = window.AIPricingManualBuilder || {});
+
+    function createStore(options) {
+        const previewTemplate = options.previewTemplate || "basic_blue";
+
+        const store = {
+            state: {
+                plans: [],
+                features: [],
+                matrix: {},
+                previewBilling: "monthly"
+            },
+            idCounter: 0,
+            initialSerialized: "",
+            isSubmitting: false,
+            previewTemplate: previewTemplate
+        };
+
+        store.nextId = function nextId(prefix) {
+            store.idCounter += 1;
+            return prefix + "_" + Date.now().toString(36) + "_" + store.idCounter;
+        };
+
+        store.normalizeId = function normalizeId(value, prefix) {
+            const normalized = String(value || "")
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, "_")
+                .replace(/^_+|_+$/g, "");
+
+            return normalized || store.nextId(prefix);
+        };
+
+        store.getTemplateClass = function getTemplateClass() {
+            const currentTemplate = $("input[name='ai_template']:checked").val() || store.previewTemplate;
+            return "ai-pricing-template-" + currentTemplate;
+        };
+
+        return store;
+    }
+
+    api.state = api.state || {};
+    api.state.createStore = createStore;
+})(window, jQuery);
+

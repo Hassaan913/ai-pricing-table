@@ -14,6 +14,7 @@ $selected_tpl   = $table ? get_post_meta( $table_id, '_ai_template', true ) : 'b
 $pricing_mode   = $table ? get_post_meta( $table_id, '_ai_pricing_mode', true ) : 'ai';
 $templates      = \AI_Pricing_Table\Templates::get_templates();
 $is_editing     = $table_id > 0;
+$is_pro         = function_exists( 'ai_pricing_table_is_pro' ) ? (bool) ai_pricing_table_is_pro() : false;
 
 if ( ! in_array( $pricing_mode, [ 'ai', 'manual' ], true ) ) {
     $pricing_mode = ! empty( $manual_data ) ? 'manual' : 'ai';
@@ -53,35 +54,57 @@ ob_start();
                     <p class="description">Choose which saved dataset the frontend should render.</p>
                 </td>
             </tr>
-            <tr>
-                <th scope="row"><label for="ai_business_name">Business Name</label></th>
-                <td><input type="text" id="ai_business_name" name="ai_business_name" class="regular-text" value="<?php echo esc_attr( $business_name ); ?>" /></td>
-            </tr>
-            <tr>
-                <th scope="row"><label for="ai_audience">Target Audience</label></th>
-                <td><input type="text" id="ai_audience" name="ai_audience" class="regular-text" value="<?php echo esc_attr( $audience ); ?>" /></td>
-            </tr>
-            <tr>
-                <th scope="row"><label for="ai_features">Main Features</label></th>
-                <td><textarea id="ai_features" name="ai_features" rows="4" class="large-text"><?php echo esc_textarea( $features ); ?></textarea></td>
-            </tr>
         </table>
     </div>
 
-    <div class="ai-admin-card">
-        <h2>AI Generator</h2>
-        <p>Generate a structured pricing table from your business details. Using Generate will switch the mode to AI.</p>
-        <p>
-            <button type="button" id="ai-generate-btn" class="button button-primary">Generate Pricing With AI</button>
-        </p>
-        <div id="ai-pricing-result" class="ai-result-box"></div>
+    <div class="ai-pricing-mode-panel ai-pricing-mode-panel-ai" data-mode-panel="ai">
+        <div class="ai-admin-card">
+            <h2>AI Inputs</h2>
+            <p>These inputs are used for AI generation and saved with the pricing table.</p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><label for="ai_business_name">Business Name</label></th>
+                    <td><input type="text" id="ai_business_name" name="ai_business_name" class="regular-text" value="<?php echo esc_attr( $business_name ); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="ai_audience">Target Audience</label></th>
+                    <td><input type="text" id="ai_audience" name="ai_audience" class="regular-text" value="<?php echo esc_attr( $audience ); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="ai_features">Main Features</label></th>
+                    <td><textarea id="ai_features" name="ai_features" rows="4" class="large-text"><?php echo esc_textarea( $features ); ?></textarea></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="ai-admin-card">
+            <h2>AI Generator</h2>
+            <p>Generate a structured pricing table from your business details. Using Generate will switch the mode to AI.</p>
+            <p>
+                <button type="button" id="ai-generate-btn" class="button button-primary">Generate Pricing With AI</button>
+            </p>
+            <div id="ai-pricing-result" class="ai-result-box"></div>
+        </div>
+
+        <div class="ai-admin-card">
+            <h2>Live Preview (AI)</h2>
+            <p>
+                This preview updates after AI generation and when you switch templates.
+                <?php if ( ! $is_pro ) : ?>
+                    <br><strong>Pro:</strong> Inline editing inside the AI preview is locked for Pro users.
+                <?php endif; ?>
+            </p>
+            <div id="ai-ai-preview"></div>
+        </div>
     </div>
 
-    <div class="ai-admin-card">
-        <h2>Manual Builder</h2>
-        <p>Use this if you want full control over plans and included features. Editing manual data will switch the mode to Manual Builder.</p>
-        <div id="ai-manual-builder"></div>
-        <input type="hidden" name="ai_manual_data" id="ai_manual_data" value="<?php echo esc_attr( $manual_data ); ?>" />
+    <div class="ai-pricing-mode-panel ai-pricing-mode-panel-manual" data-mode-panel="manual">
+        <div class="ai-admin-card">
+            <h2>Manual Builder</h2>
+            <p>Use this if you want full control over plans and included features. Editing manual data will switch the mode to Manual Builder.</p>
+            <div id="ai-manual-builder"></div>
+            <input type="hidden" name="ai_manual_data" id="ai_manual_data" value="<?php echo esc_attr( $manual_data ); ?>" />
+        </div>
     </div>
 
     <div class="ai-admin-card">
@@ -112,6 +135,50 @@ window.aiPricingExistingData = {
     ai: <?php echo wp_json_encode( $ai_json ); ?>,
     mode: <?php echo wp_json_encode( $pricing_mode ); ?>
 };
+</script>
+
+<script>
+(function () {
+    function getMode() {
+        var checked = document.querySelector("input[name='ai_pricing_mode']:checked");
+        return checked && checked.value ? checked.value : "ai";
+    }
+
+    function applyMode(nextMode) {
+        var mode = nextMode || getMode();
+        var panels = document.querySelectorAll("[data-mode-panel]");
+        for (var i = 0; i < panels.length; i++) {
+            var panel = panels[i];
+            var panelMode = panel.getAttribute("data-mode-panel");
+            var isActive = panelMode === mode;
+            panel.classList.toggle("is-hidden", !isActive);
+        }
+    }
+
+    document.addEventListener("change", function (event) {
+        var target = event.target;
+        if (!target || target.name !== "ai_pricing_mode") return;
+        applyMode(target.value);
+    });
+
+    // Apply on load using saved mode.
+    applyMode(getMode());
+
+    // Keep in sync with other scripts that programmatically toggle modes.
+    document.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!target) return;
+        if (target.id === "ai-generate-btn") {
+            window.setTimeout(function () { applyMode("ai"); }, 0);
+        }
+    });
+
+    document.addEventListener("input", function (event) {
+        var builder = event.target && event.target.closest ? event.target.closest("#ai-manual-builder") : null;
+        if (!builder) return;
+        window.setTimeout(function () { applyMode("manual"); }, 0);
+    });
+})();
 </script>
 <?php
 $content = ob_get_clean();
