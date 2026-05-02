@@ -222,48 +222,107 @@
                 return;
             }
 
-            let html = `
-            <div class="ai-manual-preview-shell">
-                <div class="ai-pricing-wrapper ai-pricing-mode-manual ${escapeHtml(store.getTemplateClass())} ai-manual-preview-wrapper" data-billing="${escapeHtml(store.state.previewBilling)}">
-                    <div class="ai-pricing-header">
-                        <div>
-                            <p class="ai-pricing-eyebrow">Manual Preview</p>
-                            <h2 class="ai-pricing-title">Edit content inline and toggle features directly from preview</h2>
+            const layout = store.getTemplateLayout();
+
+            function renderFeatureList(enabledFeatures) {
+                if (!enabledFeatures.length) {
+                    return '<li class="ai-preview-empty-feature">No enabled features yet</li>';
+                }
+
+                return enabledFeatures.map(function (feature) {
+                    const iconSvg = getFeatureIconSvg(feature.icon);
+                    return `
+                        <li class="${iconSvg ? "has-icon" : ""}">
+                            ${iconSvg ? `<span class="ai-feature-icon" aria-hidden="true">${iconSvg}</span>` : ""}
+                            <span
+                                class="ai-preview-editable"
+                                contenteditable="true"
+                                spellcheck="false"
+                                data-preview-field="feature_label"
+                                data-feature-id="${escapeHtml(feature.id)}"
+                            >${escapeHtml(feature.label || "Feature")}</span>
+                        </li>
+                    `;
+                }).join("");
+            }
+
+            function renderFeatureControls(plan) {
+                let html = `
+                    <div class="ai-preview-card-controls">
+                        <p>Quick feature toggles</p>
+                        <div class="ai-preview-feature-switches">
+                `;
+
+                store.state.features.forEach(function (feature) {
+                    const enabled = matrixManager.hasMatrixValue(plan.id, feature.id);
+
+                    html += `
+                        <div class="ai-preview-feature-switch ${enabled ? "is-enabled" : ""}">
+                            <button
+                                type="button"
+                                class="ai-preview-feature-toggle"
+                                data-plan-id="${escapeHtml(plan.id)}"
+                                data-feature-id="${escapeHtml(feature.id)}"
+                                aria-pressed="${enabled ? "true" : "false"}"
+                            >${enabled ? "On" : "Off"}</button>
+                            <span
+                                class="ai-preview-editable ai-preview-feature-control-label"
+                                contenteditable="true"
+                                spellcheck="false"
+                                data-preview-field="feature_label"
+                                data-feature-id="${escapeHtml(feature.id)}"
+                            >${escapeHtml(feature.label || "Feature")}</span>
                         </div>
-                        <div class="ai-toggle" role="tablist" aria-label="Billing period">
-                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "monthly" ? "active" : ""}" data-type="monthly">Monthly</button>
-                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "yearly" ? "active" : ""}" data-type="yearly">Yearly</button>
+                    `;
+                });
+
+                html += `
                         </div>
                     </div>
-                    <div class="ai-pricing-table">
-        `;
+                `;
 
-            store.state.plans.forEach(function (plan) {
+                return html;
+            }
+
+            function renderPlanBody(plan, enabledFeatures, monthlyPrice, yearlyPrice) {
+                return `
+                    <ul class="pricing-features">
+                        ${renderFeatureList(enabledFeatures)}
+                    </ul>
+                    <a href="${escapeHtml(plan.button_url || "#")}" class="btn ai-preview-button-link" target="_blank" rel="noopener noreferrer">
+                        <span
+                            class="ai-preview-editable"
+                            contenteditable="true"
+                            spellcheck="false"
+                            data-preview-field="button_text"
+                            data-plan-id="${escapeHtml(plan.id)}"
+                        >${escapeHtml(plan.button_text || "Get Started")}</span>
+                    </a>
+                    <div class="ai-preview-url-row">
+                        <label>
+                            <span>CTA URL</span>
+                            <input type="url" class="plan-url-inline" data-id="${escapeHtml(plan.id)}" value="${escapeHtml(plan.button_url || "#")}" placeholder="https://example.com/signup">
+                        </label>
+                    </div>
+                    ${renderFeatureControls(plan)}
+                    <div class="ai-preview-footer">Quick actions here update the builder, preview, and saved manual JSON together.</div>
+                `;
+            }
+
+            function renderPlanArticle(plan) {
                 const enabledFeatures = store.state.features.filter(function (feature) {
                     return matrixManager.hasMatrixValue(plan.id, feature.id);
                 });
                 const monthlyPrice = plan.price_monthly || plan.price_yearly || "$0";
                 const yearlyPrice = plan.price_yearly || plan.price_monthly || "$0";
-
-                html += `
-                <article class="pricing-card ai-preview-card ${plan.highlight ? "featured" : ""}">
-                    ${plan.highlight ? '<div class="badge">Featured</div>' : ""}
-                    <div class="ai-preview-card-head">
-                        <p class="pricing-plan">
-                            <span
-                                class="ai-preview-editable"
-                                contenteditable="true"
-                                spellcheck="false"
-                                data-preview-field="title"
-                                data-plan-id="${escapeHtml(plan.id)}"
-                            >${escapeHtml(plan.title || "Plan")}</span>
-                        </p>
-                        <div class="ai-preview-card-actions">
-                            <button type="button" class="button-link ai-preview-card-action toggle-featured" data-id="${escapeHtml(plan.id)}">${plan.highlight ? "Unfeature" : "Feature"}</button>
-                            <button type="button" class="button-link ai-preview-card-action duplicate-plan" data-id="${escapeHtml(plan.id)}">Duplicate</button>
-                            <button type="button" class="button-link ai-preview-card-action remove-plan" data-id="${escapeHtml(plan.id)}">Remove</button>
-                        </div>
+                const cardActions = `
+                    <div class="ai-preview-card-actions">
+                        <button type="button" class="button-link ai-preview-card-action toggle-featured" data-id="${escapeHtml(plan.id)}">${plan.highlight ? "Unfeature" : "Feature"}</button>
+                        <button type="button" class="button-link ai-preview-card-action duplicate-plan" data-id="${escapeHtml(plan.id)}">Duplicate</button>
+                        <button type="button" class="button-link ai-preview-card-action remove-plan" data-id="${escapeHtml(plan.id)}">Remove</button>
                     </div>
+                `;
+                const priceMarkup = `
                     <div class="price-block">
                         <div class="price">
                             <span
@@ -293,80 +352,127 @@
                             >${escapeHtml(plan.billing_text || "Add billing note")}</span>
                         </p>
                     </div>
-                    <ul class="pricing-features">
-            `;
+                `;
 
-                if (!enabledFeatures.length) {
-                    html += '<li class="ai-preview-empty-feature">No enabled features yet</li>';
-                } else {
-                    enabledFeatures.forEach(function (feature) {
-                        const iconSvg = getFeatureIconSvg(feature.icon);
-                        html += `
-                        <li class="${iconSvg ? "has-icon" : ""}">
-                            ${iconSvg ? `<span class="ai-feature-icon" aria-hidden="true">${iconSvg}</span>` : ""}
-                            <span
-                                class="ai-preview-editable"
-                                contenteditable="true"
-                                spellcheck="false"
-                                data-preview-field="feature_label"
-                                data-feature-id="${escapeHtml(feature.id)}"
-                            >${escapeHtml(feature.label || "Feature")}</span>
-                        </li>
+                if (layout === "rows") {
+                    return `
+                        <article class="pricing-row ai-preview-card ${plan.highlight ? "featured" : ""}">
+                            <div class="pricing-row-main">
+                                <div class="pricing-row-meta">
+                                    <p class="pricing-plan">
+                                        <span
+                                            class="ai-preview-editable"
+                                            contenteditable="true"
+                                            spellcheck="false"
+                                            data-preview-field="title"
+                                            data-plan-id="${escapeHtml(plan.id)}"
+                                        >${escapeHtml(plan.title || "Plan")}</span>
+                                    </p>
+                                    ${cardActions}
+                                </div>
+                                ${priceMarkup}
+                            </div>
+                            ${renderPlanBody(plan, enabledFeatures, monthlyPrice, yearlyPrice)}
+                        </article>
                     `;
-                    });
                 }
 
-                html += `
-                    </ul>
-                    <a href="${escapeHtml(plan.button_url || "#")}" class="btn ai-preview-button-link" target="_blank" rel="noopener noreferrer">
-                        <span
-                            class="ai-preview-editable"
-                            contenteditable="true"
-                            spellcheck="false"
-                            data-preview-field="button_text"
-                            data-plan-id="${escapeHtml(plan.id)}"
-                        >${escapeHtml(plan.button_text || "Get Started")}</span>
-                    </a>
-                    <div class="ai-preview-url-row">
-                        <label>
-                            <span>CTA URL</span>
-                            <input type="url" class="plan-url-inline" data-id="${escapeHtml(plan.id)}" value="${escapeHtml(plan.button_url || "#")}" placeholder="https://example.com/signup">
-                        </label>
-                    </div>
-                    <div class="ai-preview-card-controls">
-                        <p>Quick feature toggles</p>
-                        <div class="ai-preview-feature-switches">
+                if (layout === "spotlight") {
+                    return `
+                        <article class="pricing-card ai-preview-card ${plan.highlight ? "featured spotlight-card" : ""}">
+                            ${plan.highlight ? '<div class="badge">Featured</div>' : ""}
+                            <div class="pricing-card-head">
+                                <div>
+                                    <p class="pricing-plan">
+                                        <span
+                                            class="ai-preview-editable"
+                                            contenteditable="true"
+                                            spellcheck="false"
+                                            data-preview-field="title"
+                                            data-plan-id="${escapeHtml(plan.id)}"
+                                        >${escapeHtml(plan.title || "Plan")}</span>
+                                    </p>
+                                    ${cardActions}
+                                </div>
+                                ${priceMarkup}
+                            </div>
+                            ${renderPlanBody(plan, enabledFeatures, monthlyPrice, yearlyPrice)}
+                        </article>
+                    `;
+                }
+
+                return `
+                    <article class="pricing-card ai-preview-card ${plan.highlight ? "featured" : ""}">
+                        ${plan.highlight ? '<div class="badge">Featured</div>' : ""}
+                        <div class="ai-preview-card-head">
+                            <p class="pricing-plan">
+                                <span
+                                    class="ai-preview-editable"
+                                    contenteditable="true"
+                                    spellcheck="false"
+                                    data-preview-field="title"
+                                    data-plan-id="${escapeHtml(plan.id)}"
+                                >${escapeHtml(plan.title || "Plan")}</span>
+                            </p>
+                            ${cardActions}
+                        </div>
+                        ${priceMarkup}
+                        ${renderPlanBody(plan, enabledFeatures, monthlyPrice, yearlyPrice)}
+                    </article>
+                `;
+            }
+
+            let html = `
+            <div class="ai-manual-preview-shell">
+                <div class="ai-pricing-wrapper ai-pricing-mode-manual ${escapeHtml(store.getTemplateClass())} ${escapeHtml(store.getLayoutClass())} ai-manual-preview-wrapper" data-billing="${escapeHtml(store.state.previewBilling)}">
             `;
 
-                store.state.features.forEach(function (feature) {
-                    const enabled = matrixManager.hasMatrixValue(plan.id, feature.id);
-
-                    html += `
-                    <div class="ai-preview-feature-switch ${enabled ? "is-enabled" : ""}">
-                        <button
-                            type="button"
-                            class="ai-preview-feature-toggle"
-                            data-plan-id="${escapeHtml(plan.id)}"
-                            data-feature-id="${escapeHtml(feature.id)}"
-                            aria-pressed="${enabled ? "true" : "false"}"
-                        >${enabled ? "On" : "Off"}</button>
-                        <span
-                            class="ai-preview-editable ai-preview-feature-control-label"
-                            contenteditable="true"
-                            spellcheck="false"
-                            data-preview-field="feature_label"
-                            data-feature-id="${escapeHtml(feature.id)}"
-                        >${escapeHtml(feature.label || "Feature")}</span>
-                    </div>
-                `;
-                });
-
+            if (layout === "spotlight") {
                 html += `
+                    <div class="ai-pricing-shell">
+                        <div class="ai-pricing-intro">
+                            <p class="ai-pricing-eyebrow">Manual Preview</p>
+                            <h2 class="ai-pricing-title">Lead with the highlighted plan and compare the rest below</h2>
+                            <p class="ai-pricing-summary">This preview mirrors the spotlight frontend layout for the selected template family.</p>
+                            <div class="ai-toggle" role="tablist" aria-label="Billing period">
+                                <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "monthly" ? "active" : ""}" data-type="monthly">Monthly</button>
+                                <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "yearly" ? "active" : ""}" data-type="yearly">Yearly</button>
+                            </div>
+                        </div>
+                        <div class="ai-pricing-table">
+                `;
+            } else if (layout === "rows") {
+                html += `
+                    <div class="ai-pricing-header">
+                        <div>
+                            <p class="ai-pricing-eyebrow">Manual Preview</p>
+                            <h2 class="ai-pricing-title">Compact row preview with inline editing and quick controls</h2>
+                        </div>
+                        <div class="ai-toggle" role="tablist" aria-label="Billing period">
+                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "monthly" ? "active" : ""}" data-type="monthly">Monthly</button>
+                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "yearly" ? "active" : ""}" data-type="yearly">Yearly</button>
                         </div>
                     </div>
-                    <div class="ai-preview-footer">Quick actions here update the builder, preview, and saved manual JSON together.</div>
-                </article>
-            `;
+                    <div class="ai-pricing-rows">
+                `;
+            } else {
+                html += `
+                    <div class="ai-pricing-header">
+                        <div>
+                            <p class="ai-pricing-eyebrow">Manual Preview</p>
+                            <h2 class="ai-pricing-title">Edit content inline and toggle features directly from preview</h2>
+                        </div>
+                        <div class="ai-toggle" role="tablist" aria-label="Billing period">
+                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "monthly" ? "active" : ""}" data-type="monthly">Monthly</button>
+                            <button type="button" class="ai-preview-billing-toggle ${store.state.previewBilling === "yearly" ? "active" : ""}" data-type="yearly">Yearly</button>
+                        </div>
+                    </div>
+                    <div class="ai-pricing-table">
+                `;
+            }
+
+            store.state.plans.forEach(function (plan) {
+                html += renderPlanArticle(plan);
             });
 
             html += `

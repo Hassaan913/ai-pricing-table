@@ -123,7 +123,6 @@
     position: relative;
     display: grid;
     gap: 12px;
-    min-height: 100%;
     padding: 14px;
     border: 1px solid #dcdcde;
     border-radius: 8px;
@@ -197,6 +196,25 @@
     color: #50575e;
     font-size: 13px;
     line-height: 1.45;
+}
+
+.ai-preview-container {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+    background: #f6f7f7;
+    min-height: 200px;
+    overflow: auto;
+}
+
+.ai-preview-container p.error {
+    color: #d63638;
+    margin: 0;
+}
+
+.ai-preview-container p {
+    margin: 0 0 16px 0;
+    color: #646970;
 }
 
 .ai-template-badge {

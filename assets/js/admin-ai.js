@@ -5,6 +5,7 @@ jQuery(function ($) {
     const $modeField = $("input[name='ai_pricing_mode'][value='ai']");
     const $preview = $("#ai-ai-preview");
     const isPro = !!(window.aiPricingAdmin && window.aiPricingAdmin.isPro);
+    const templateRegistry = window.aiPricingTemplates || {};
     let currentAi = null;
 
     if (!$button.length) {
@@ -105,6 +106,12 @@ jQuery(function ($) {
         return $("input[name='ai_template']:checked").val() || "basic_blue";
     }
 
+    function getTemplateLayout(templateKey) {
+        return templateRegistry[templateKey] && templateRegistry[templateKey].layout
+            ? templateRegistry[templateKey].layout
+            : "cards";
+    }
+
     function renderAiPreview(aiData) {
         if (!$preview.length) {
             return;
@@ -118,13 +125,140 @@ jQuery(function ($) {
         }
 
         const templateKey = getTemplateKey();
+        const layout = getTemplateLayout(templateKey);
         const recommended = normalized.recommended_tier || "";
         const symbol = currencySymbol(normalized.currency);
         const editableClass = isPro ? "ai-ai-preview-editable" : "";
         const editableAttr = isPro ? 'contenteditable="true" spellcheck="false"' : "";
 
-        let html = `
-            <div class="ai-pricing-wrapper ai-pricing-mode-ai ai-pricing-template-${escapeHtml(templateKey)}" data-billing="monthly">
+        function renderFeatureItems(tier, tierIndex) {
+            return (tier.features || []).map(function (feature, featureIndex) {
+                return `<li><span class="${editableClass}" ${editableAttr} data-ai-field="feature" data-ai-tier-index="${tierIndex}" data-ai-feature-index="${featureIndex}">${escapeHtml(feature)}</span></li>`;
+            }).join("");
+        }
+
+        function renderPriceMarkup(tier, tierIndex) {
+            return `
+                <div class="price-block">
+                    <div class="price">
+                        <span class="currency-symbol">${escapeHtml(symbol)}</span>
+                        <span class="price-value monthly ${editableClass}" ${editableAttr} data-ai-field="price_monthly" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.price_monthly)}</span>
+                        <span class="price-value yearly ${editableClass}" ${editableAttr} data-ai-field="price_yearly" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.price_yearly)}</span>
+                    </div>
+                    <p class="billing-copy">
+                        <span class="billing-duration monthly">per month</span>
+                        <span class="billing-duration yearly">per year</span>
+                        <span class="billing-note ${editableClass}" ${editableAttr} data-ai-field="billing_text" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.billing_text || "Add billing note")}</span>
+                    </p>
+                </div>
+            `;
+        }
+
+        function renderPlanFooter(tier, tierIndex) {
+            return `
+                <a href="${escapeHtml(tier.button_url || "#")}" class="btn" target="_blank" rel="noopener noreferrer">
+                    <span class="${editableClass}" ${editableAttr} data-ai-field="button_text" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.button_text || "Get Started")}</span>
+                </a>
+                ${isPro ? `
+                    <div class="ai-preview-url-row">
+                        <label>
+                            <span>CTA URL</span>
+                            <input type="url" class="ai-plan-url-inline" data-ai-tier-index="${tierIndex}" value="${escapeHtml(tier.button_url || "#")}" placeholder="https://example.com/signup">
+                        </label>
+                    </div>
+                ` : ""}
+            `;
+        }
+
+        function renderTier(tier, tierIndex) {
+            const isFeatured = tier.highlight || (tier.name === recommended);
+
+            if (layout === "rows") {
+                return `
+                    <article class="pricing-row ${isFeatured ? "featured" : ""}">
+                        <div class="pricing-row-main">
+                            <div class="pricing-row-meta">
+                                <p class="pricing-plan">
+                                    <span class="${editableClass}" ${editableAttr} data-ai-field="name" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.name)}</span>
+                                </p>
+                            </div>
+                            ${renderPriceMarkup(tier, tierIndex)}
+                        </div>
+                        <ul class="pricing-features">
+                            ${renderFeatureItems(tier, tierIndex)}
+                        </ul>
+                        ${renderPlanFooter(tier, tierIndex)}
+                    </article>
+                `;
+            }
+
+            if (layout === "spotlight") {
+                return `
+                    <article class="pricing-card ${isFeatured ? "featured spotlight-card" : ""}">
+                        ${isFeatured ? '<div class="badge">Recommended</div>' : ""}
+                        <div class="pricing-card-head">
+                            <div>
+                                <p class="pricing-plan">
+                                    <span class="${editableClass}" ${editableAttr} data-ai-field="name" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.name)}</span>
+                                </p>
+                            </div>
+                            ${renderPriceMarkup(tier, tierIndex)}
+                        </div>
+                        <ul class="pricing-features">
+                            ${renderFeatureItems(tier, tierIndex)}
+                        </ul>
+                        ${renderPlanFooter(tier, tierIndex)}
+                    </article>
+                `;
+            }
+
+            return `
+                <article class="pricing-card ${isFeatured ? "featured" : ""}">
+                    ${isFeatured ? '<div class="badge">Most Popular</div>' : ""}
+                    <p class="pricing-plan">
+                        <span class="${editableClass}" ${editableAttr} data-ai-field="name" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.name)}</span>
+                    </p>
+                    ${renderPriceMarkup(tier, tierIndex)}
+                    <ul class="pricing-features">
+                        ${renderFeatureItems(tier, tierIndex)}
+                    </ul>
+                    ${renderPlanFooter(tier, tierIndex)}
+                </article>
+            `;
+        }
+
+        let html = `<div class="ai-pricing-wrapper ai-pricing-mode-ai ai-pricing-template-${escapeHtml(templateKey)} ai-pricing-layout-${escapeHtml(layout)}" data-billing="monthly">`;
+
+        if (layout === "spotlight") {
+            html += `
+                <div class="ai-pricing-shell">
+                    <div class="ai-pricing-intro">
+                        <p class="ai-pricing-eyebrow">AI Preview</p>
+                        <h2 class="ai-pricing-title">${isPro ? "Preview the spotlight layout and edit inline" : "Preview the spotlight layout"}</h2>
+                        <p class="ai-pricing-summary">This preview mirrors the selected spotlight template family instead of the default card stack.</p>
+                        <div class="ai-toggle" role="tablist" aria-label="Billing period">
+                            <button class="active" data-type="monthly" type="button">Monthly</button>
+                            <button data-type="yearly" type="button">Yearly</button>
+                        </div>
+                    </div>
+                    <div class="ai-pricing-table">
+            `;
+        } else if (layout === "rows") {
+            html += `
+                <div class="ai-pricing-header">
+                    <div>
+                        <p class="ai-pricing-eyebrow">AI Preview</p>
+                        <h2 class="ai-pricing-title">${isPro ? "Preview the row layout and edit inline" : "Preview the row layout"}</h2>
+                    </div>
+                    <div class="ai-toggle" role="tablist" aria-label="Billing period">
+                        <button class="active" data-type="monthly" type="button">Monthly</button>
+                        <button data-type="yearly" type="button">Yearly</button>
+                    </div>
+                </div>
+                <div class="ai-pricing-rows">
+            `;
+        } else {
+            html += `
                 <div class="ai-pricing-header">
                     <div>
                         <p class="ai-pricing-eyebrow">AI Preview</p>
@@ -136,50 +270,11 @@ jQuery(function ($) {
                     </div>
                 </div>
                 <div class="ai-pricing-table">
-        `;
+            `;
+        }
 
         normalized.tiers.forEach(function (tier, tierIndex) {
-            const isFeatured = tier.highlight || (tier.name === recommended);
-            html += `
-                <article class="pricing-card ${isFeatured ? "featured" : ""}">
-                    ${isFeatured ? '<div class="badge">Most Popular</div>' : ""}
-                    <p class="pricing-plan">
-                        <span class="${editableClass}" ${editableAttr} data-ai-field="name" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.name)}</span>
-                    </p>
-                    <div class="price-block">
-                        <div class="price">
-                            <span class="currency-symbol">${escapeHtml(symbol)}</span>
-                            <span class="price-value monthly ${editableClass}" ${editableAttr} data-ai-field="price_monthly" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.price_monthly)}</span>
-                            <span class="price-value yearly ${editableClass}" ${editableAttr} data-ai-field="price_yearly" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.price_yearly)}</span>
-                        </div>
-                        <p class="billing-copy">
-                            <span class="billing-duration monthly">per month</span>
-                            <span class="billing-duration yearly">per year</span>
-                            <span class="billing-note ${editableClass}" ${editableAttr} data-ai-field="billing_text" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.billing_text || "Add billing note")}</span>
-                        </p>
-                    </div>
-                    <ul class="pricing-features">
-            `;
-
-            (tier.features || []).forEach(function (feature, featureIndex) {
-                html += `<li><span class="${editableClass}" ${editableAttr} data-ai-field="feature" data-ai-tier-index="${tierIndex}" data-ai-feature-index="${featureIndex}">${escapeHtml(feature)}</span></li>`;
-            });
-
-            html += `
-                    </ul>
-                    <a href="${escapeHtml(tier.button_url || "#")}" class="btn" target="_blank" rel="noopener noreferrer">
-                        <span class="${editableClass}" ${editableAttr} data-ai-field="button_text" data-ai-tier-index="${tierIndex}">${escapeHtml(tier.button_text || "Get Started")}</span>
-                    </a>
-                    ${isPro ? `
-                        <div class="ai-preview-url-row">
-                            <label>
-                                <span>CTA URL</span>
-                                <input type="url" class="ai-plan-url-inline" data-ai-tier-index="${tierIndex}" value="${escapeHtml(tier.button_url || "#")}" placeholder="https://example.com/signup">
-                            </label>
-                        </div>
-                    ` : ""}
-                </article>
-            `;
+            html += renderTier(tier, tierIndex);
         });
 
         html += `
@@ -199,8 +294,10 @@ jQuery(function ($) {
     }
 
     function renderFromJsonField() {
-        const raw = $jsonField.val();
-        renderAiPreview(raw);
+        // Use AJAX preview instead of JavaScript rendering
+        if (typeof updateAiPreview === 'function') {
+            updateAiPreview();
+        }
     }
 
     $button.on("click", function () {
@@ -241,7 +338,10 @@ jQuery(function ($) {
             $jsonField.val(response.data.json);
             $modeField.prop("checked", true);
             $result.html("<pre>" + JSON.stringify(response.data.pricing, null, 2) + "</pre>");
-            renderAiPreview(response.data.pricing);
+            // Use AJAX preview instead of JavaScript rendering
+            if (typeof updateAiPreview === 'function') {
+                updateAiPreview();
+            }
         }).fail(function () {
             $result.html('<div class="notice notice-error inline"><p>Request failed.</p></div>');
         }).always(function () {

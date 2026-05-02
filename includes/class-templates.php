@@ -30,7 +30,7 @@ class Templates {
             'modern_green' => [
                 'name'         => 'Modern Green',
                 'description'  => 'A sharper operator-style palette for product-led and growth-oriented pricing pages.',
-                'layout'       => 'cards',
+                'layout'       => 'spotlight',
                 'plan'         => 'free',
                 'requires_pro' => false,
                 'preview'      => [
@@ -43,7 +43,7 @@ class Templates {
             'slate_minimal' => [
                 'name'         => 'Slate Minimal',
                 'description'  => 'Quiet neutral styling for B2B tools that need dense information without noise.',
-                'layout'       => 'cards',
+                'layout'       => 'rows',
                 'plan'         => 'free',
                 'requires_pro' => false,
                 'preview'      => [
@@ -56,7 +56,7 @@ class Templates {
             'sunset_coral' => [
                 'name'         => 'Sunset Coral',
                 'description'  => 'Warm editorial contrast for creator tools, agencies, and product showcases.',
-                'layout'       => 'cards',
+                'layout'       => 'spotlight',
                 'plan'         => 'free',
                 'requires_pro' => false,
                 'preview'      => [
@@ -69,7 +69,7 @@ class Templates {
             'midnight_cyan' => [
                 'name'         => 'Midnight Cyan',
                 'description'  => 'Dark presentation with cool cyan accents for modern infrastructure and AI products.',
-                'layout'       => 'cards',
+                'layout'       => 'rows',
                 'plan'         => 'free',
                 'requires_pro' => false,
                 'preview'      => [
@@ -95,7 +95,7 @@ class Templates {
             'royal_amethyst' => [
                 'name'         => 'Royal Amethyst',
                 'description'  => 'High-contrast premium look for polished launches and pro-tier positioning.',
-                'layout'       => 'cards',
+                'layout'       => 'spotlight',
                 'plan'         => 'pro',
                 'requires_pro' => true,
                 'preview'      => [
@@ -108,7 +108,7 @@ class Templates {
             'ember_gold' => [
                 'name'         => 'Ember Gold',
                 'description'  => 'Warm, assertive premium styling for high-ticket offers and enterprise bundles.',
-                'layout'       => 'cards',
+                'layout'       => 'rows',
                 'plan'         => 'pro',
                 'requires_pro' => true,
                 'preview'      => [
@@ -121,7 +121,7 @@ class Templates {
             'glass_frost' => [
                 'name'         => 'Glass Frost',
                 'description'  => 'Light glassmorphism-inspired skin for polished product marketing surfaces.',
-                'layout'       => 'cards',
+                'layout'       => 'spotlight',
                 'plan'         => 'pro',
                 'requires_pro' => true,
                 'preview'      => [
@@ -134,7 +134,7 @@ class Templates {
             'contrast_crimson' => [
                 'name'         => 'Contrast Crimson',
                 'description'  => 'Bold high-contrast premium styling for urgent offers and hard-sell campaigns.',
-                'layout'       => 'cards',
+                'layout'       => 'rows',
                 'plan'         => 'pro',
                 'requires_pro' => true,
                 'preview'      => [
@@ -193,5 +193,31 @@ class Templates {
         }
 
         return $key;
+    }
+
+    public static function get_layout( $key ) {
+        $key = sanitize_key( (string) $key );
+        $templates = self::get_templates();
+
+        if ( empty( $templates[ $key ]['layout'] ) ) {
+            return 'cards';
+        }
+
+        return sanitize_key( $templates[ $key ]['layout'] );
+    }
+
+    public static function get_templates_for_js() {
+        $templates = [];
+
+        foreach ( self::get_templates() as $key => $template ) {
+            $templates[ $key ] = [
+                'name'         => $template['name'],
+                'layout'       => $template['layout'],
+                'plan'         => $template['plan'],
+                'requires_pro' => ! empty( $template['requires_pro'] ),
+            ];
+        }
+
+        return $templates;
     }
 }

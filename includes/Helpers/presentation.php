@@ -8,17 +8,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Get layout slug for a template key.
+ *
+ * @param string $template Template key.
+ * @return string
+ */
+function ai_pricing_get_template_layout( $template ) {
+    return \AI_Pricing_Table\Templates::get_layout( $template );
+}
+
+/**
  * Render pricing table wrapper classes.
  *
  * @param string $mode Pricing mode.
  * @param string $template Template key.
+ * @param string $layout Layout key.
  * @return string
  */
-function ai_pricing_get_wrapper_classes( $mode, $template ) {
+function ai_pricing_get_wrapper_classes( $mode, $template, $layout = 'cards' ) {
     $classes = [
         'ai-pricing-wrapper',
         'ai-pricing-mode-' . sanitize_html_class( $mode ),
         'ai-pricing-template-' . sanitize_html_class( $template ),
+        'ai-pricing-layout-' . sanitize_html_class( $layout ),
     ];
 
     return implode( ' ', $classes );

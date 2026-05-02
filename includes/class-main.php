@@ -84,7 +84,7 @@ class Main {
         $this->post_type = new Post_Type();
         $this->post_type->hooks();
 
-        $this->admin = new \AI_Pricing_Table\Admin\Admin( $this->settings );
+        $this->admin = new \AI_Pricing_Table\Admin\Admin( $this->settings, $this->ai );
         $this->admin->hooks();
     }
 }

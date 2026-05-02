@@ -51,6 +51,16 @@
             return "ai-pricing-template-" + currentTemplate;
         };
 
+        store.getTemplateLayout = function getTemplateLayout() {
+            const currentTemplate = $("input[name='ai_template']:checked").val() || store.previewTemplate;
+            const templates = window.aiPricingTemplates || {};
+            return templates[currentTemplate] && templates[currentTemplate].layout ? templates[currentTemplate].layout : "cards";
+        };
+
+        store.getLayoutClass = function getLayoutClass() {
+            return "ai-pricing-layout-" + store.getTemplateLayout();
+        };
+
         return store;
     }
 

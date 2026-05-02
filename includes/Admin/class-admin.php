@@ -10,15 +10,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Admin {
 
     private ?Settings $settings;
+    private $ai;
 
-    public function __construct( ?Settings $settings = null ) {
+    public function __construct( ?Settings $settings = null, $ai = null ) {
         $this->settings = $settings;
+        $this->ai = $ai;
     }
 
     public function hooks() {
         add_action( 'admin_notices', [ $this, 'admin_notices' ] );
         add_action( 'admin_init', [ $this, 'handle_admin_requests' ] );
         add_action( 'admin_menu', [ $this, 'register_admin_menu' ] );
+
+        // AJAX handlers for preview rendering
+        add_action( 'wp_ajax_ai_pricing_preview_ai', [ $this, 'ajax_preview_ai_table' ] );
+        add_action( 'wp_ajax_ai_pricing_preview_manual', [ $this, 'ajax_preview_manual_table' ] );
+        add_action( 'wp_ajax_ai_generate_pricing', [ $this, 'ajax_generate_pricing' ] );
     }
 
     public function admin_notices() {
@@ -495,6 +502,103 @@ class Admin {
         $is_pro = function_exists( 'ai_pricing_table_is_pro' ) ? (bool) ai_pricing_table_is_pro() : false;
 
         return \AI_Pricing_Table\Templates::sanitize_template_key( $template, $is_pro );
+    }
+
+    /**
+     * AJAX handler for AI table preview.
+     */
+    public function ajax_preview_ai_table() {
+        check_ajax_referer( 'ai_pricing_preview', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+
+        $json_data = isset( $_POST['json_data'] ) ? wp_unslash( $_POST['json_data'] ) : '';
+        $template  = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'basic_blue';
+
+        $template = $this->sanitize_template_key( $template );
+
+        if ( empty( $json_data ) ) {
+            wp_send_json_error( 'No data provided' );
+        }
+
+        $data = json_decode( $json_data, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() ) {
+            wp_send_json_error( 'Invalid JSON data' );
+        }
+
+        $html = \ai_pricing_render_ai_table( $data, $template );
+
+        wp_send_json_success( [ 'html' => $html ] );
+    }
+
+    /**
+     * AJAX handler for manual table preview.
+     */
+    public function ajax_preview_manual_table() {
+        check_ajax_referer( 'ai_pricing_preview', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+
+        $json_data = isset( $_POST['json_data'] ) ? wp_unslash( $_POST['json_data'] ) : '';
+        $template  = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'basic_blue';
+
+        $template = $this->sanitize_template_key( $template );
+
+        if ( empty( $json_data ) ) {
+            wp_send_json_error( 'No data provided' );
+        }
+
+        $data = json_decode( $json_data, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() ) {
+            wp_send_json_error( 'Invalid JSON data' );
+        }
+
+        $html = \ai_pricing_render_manual_table( $data, $template );
+
+        wp_send_json_success( [ 'html' => $html ] );
+    }
+
+    /**
+     * AJAX handler for AI pricing generation.
+     */
+    public function ajax_generate_pricing() {
+        check_ajax_referer( 'ai_pricing_generate', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+
+        $business = isset( $_POST['business'] ) ? sanitize_text_field( wp_unslash( $_POST['business'] ) ) : '';
+        $audience = isset( $_POST['audience'] ) ? sanitize_text_field( wp_unslash( $_POST['audience'] ) ) : '';
+        $features = isset( $_POST['features'] ) ? sanitize_textarea_field( wp_unslash( $_POST['features'] ) ) : '';
+
+        if ( empty( $business ) && empty( $audience ) && empty( $features ) ) {
+            wp_send_json_error( [ 'message' => 'Please provide at least one field: business name, target audience, or features.' ] );
+        }
+
+        $business_info = [
+            'business_name' => $business,
+            'audience'      => $audience,
+            'features'      => $features,
+            'type'          => 'SaaS',
+        ];
+
+        $result = $this->ai->generate_pricing( $business_info );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        }
+
+        wp_send_json_success( [
+            'json'    => wp_json_encode( $result ),
+            'pricing' => $result,
+        ] );
     }
 
     private function get_current_table() {

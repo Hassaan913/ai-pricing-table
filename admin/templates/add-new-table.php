@@ -101,7 +101,17 @@ ob_start();
                     <br><strong>Pro:</strong> Inline editing inside the AI preview is locked for Pro users.
                 <?php endif; ?>
             </p>
-            <div id="ai-ai-preview"></div>
+            <div id="ai-ai-preview" class="ai-preview-container">
+                <?php
+                // Show initial preview if we have AI data
+                if ( ! empty( $ai_json ) ) {
+                    $ai_data = json_decode( $ai_json, true );
+                    if ( JSON_ERROR_NONE === json_last_error() && is_array( $ai_data ) ) {
+                        echo \ai_pricing_render_ai_table( $ai_data, $selected_tpl );
+                    }
+                }
+                ?>
+            </div>
         </div>
     </div>
 
@@ -111,6 +121,22 @@ ob_start();
             <p>Use this if you want full control over plans and included features. Editing manual data will switch the mode to Manual Builder.</p>
             <div id="ai-manual-builder"></div>
             <input type="hidden" name="ai_manual_data" id="ai_manual_data" value="<?php echo esc_attr( $manual_data ); ?>" />
+        </div>
+
+        <div class="ai-admin-card">
+            <h2>Live Preview (Manual)</h2>
+            <p>This preview updates when you make changes to the manual builder and when you switch templates.</p>
+            <div id="ai-manual-preview" class="ai-preview-container">
+                <?php
+                // Show initial preview if we have manual data
+                if ( ! empty( $manual_data ) ) {
+                    $manual_data_decoded = json_decode( $manual_data, true );
+                    if ( JSON_ERROR_NONE === json_last_error() && is_array( $manual_data_decoded ) ) {
+                        echo \ai_pricing_render_manual_table( $manual_data_decoded, $selected_tpl );
+                    }
+                }
+                ?>
+            </div>
         </div>
     </div>
 
@@ -212,6 +238,7 @@ window.aiPricingExistingData = {
     ai: <?php echo wp_json_encode( $ai_json ); ?>,
     mode: <?php echo wp_json_encode( $pricing_mode ); ?>
 };
+window.aiPricingTemplates = <?php echo wp_json_encode( \AI_Pricing_Table\Templates::get_templates_for_js() ); ?>;
 window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_feature_icons_for_js() ); ?>;
 </script>
 
@@ -256,6 +283,108 @@ window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_f
         if (!builder) return;
         window.setTimeout(function () { applyMode("manual"); }, 0);
     });
+
+    // AJAX Preview functionality
+    function updateAiPreview() {
+        var jsonData = document.getElementById('ai_pricing_json').value;
+        var template = document.querySelector('input[name="ai_template"]:checked');
+
+        if (!jsonData || !template) {
+            return;
+        }
+
+        template = template.value;
+
+        var previewContainer = document.getElementById('ai-ai-preview');
+        previewContainer.innerHTML = '<p>Loading preview...</p>';
+
+        var data = new FormData();
+        data.append('action', 'ai_pricing_preview_ai');
+        data.append('json_data', jsonData);
+        data.append('template', template);
+        data.append('nonce', '<?php echo wp_create_nonce( "ai_pricing_preview" ); ?>');
+
+        fetch(ajaxurl, {
+            method: 'POST',
+            body: data,
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.success) {
+                previewContainer.innerHTML = result.data.html;
+            } else {
+                previewContainer.innerHTML = '<p class="error">Preview error: ' + (result.data || 'Unknown error') + '</p>';
+            }
+        })
+        .catch(function(error) {
+            previewContainer.innerHTML = '<p class="error">Preview error: ' + error.message + '</p>';
+        });
+    }
+
+    function updateManualPreview() {
+        var jsonData = document.getElementById('ai_manual_data').value;
+        var template = document.querySelector('input[name="ai_template"]:checked');
+
+        if (!jsonData || !template) {
+            return;
+        }
+
+        template = template.value;
+
+        var previewContainer = document.getElementById('ai-manual-preview');
+        if (!previewContainer) return;
+
+        previewContainer.innerHTML = '<p>Loading preview...</p>';
+
+        var data = new FormData();
+        data.append('action', 'ai_pricing_preview_manual');
+        data.append('json_data', jsonData);
+        data.append('template', template);
+        data.append('nonce', '<?php echo wp_create_nonce( "ai_pricing_preview" ); ?>');
+
+        fetch(ajaxurl, {
+            method: 'POST',
+            body: data,
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.success) {
+                previewContainer.innerHTML = result.data.html;
+            } else {
+                previewContainer.innerHTML = '<p class="error">Preview error: ' + (result.data || 'Unknown error') + '</p>';
+            }
+        })
+        .catch(function(error) {
+            previewContainer.innerHTML = '<p class="error">Preview error: ' + error.message + '</p>';
+        });
+    }
+
+    // Update previews when template changes
+    document.addEventListener('change', function(event) {
+        if (event.target.name === 'ai_template') {
+            var mode = getMode();
+            if (mode === 'ai') {
+                updateAiPreview();
+            } else if (mode === 'manual') {
+                updateManualPreview();
+            }
+        }
+    });
+
+    // Update AI preview after generation
+    var originalAiGenerateBtn = document.getElementById('ai-generate-btn');
+    if (originalAiGenerateBtn) {
+        originalAiGenerateBtn.addEventListener('click', function() {
+            // Wait for the generation to complete, then update preview
+            setTimeout(updateAiPreview, 1000);
+        });
+    }
 })();
 </script>
 <?php

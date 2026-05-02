@@ -1,0 +1,124 @@
+.ai-pricing-layout-cards .ai-pricing-table {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 22px;
+}
+
+.ai-pricing-layout-spotlight .ai-pricing-shell {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.ai-pricing-layout-spotlight .ai-pricing-intro {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+}
+
+.ai-pricing-layout-spotlight .ai-pricing-summary {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 30rem;
+}
+
+.ai-pricing-layout-spotlight .ai-pricing-table {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 22px;
+}
+
+.ai-pricing-layout-spotlight .spotlight-card {
+    transform: translateY(-6px);
+}
+
+.ai-pricing-layout-spotlight .pricing-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.ai-pricing-layout-spotlight .pricing-card-note,
+.ai-pricing-layout-rows .pricing-card-note {
+    margin: 8px 0 0;
+    color: var(--ai-muted);
+    font-size: 13px;
+}
+
+.ai-pricing-layout-rows .ai-pricing-rows {
+    display: grid;
+    gap: 16px;
+}
+
+.ai-pricing-layout-rows .pricing-row {
+    display: grid;
+    gap: 18px;
+    padding: 22px 24px;
+    border: 1px solid var(--ai-border);
+    border-radius: 22px;
+    background: var(--ai-surface);
+    color: var(--ai-text);
+    box-shadow: 0 16px 42px rgba(15, 23, 42, 0.12);
+}
+
+.ai-pricing-layout-rows .pricing-row.featured {
+    border-color: rgba(37, 99, 235, 0.28);
+    background: var(--ai-highlight);
+}
+
+.ai-pricing-layout-rows .pricing-row-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.ai-pricing-layout-rows .pricing-row-meta {
+    display: grid;
+    gap: 2px;
+}
+
+.ai-pricing-layout-rows .pricing-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin: 0;
+}
+
+.ai-pricing-layout-rows .pricing-features li {
+    margin: 0;
+}
+
+.ai-pricing-layout-rows .btn {
+    margin-top: 0;
+    justify-self: start;
+}
+
+.ai-pricing-mode-manual.ai-pricing-layout-spotlight .ai-pricing-summary {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.ai-pricing-template-slate_minimal.ai-pricing-layout-spotlight .ai-pricing-summary,
+.ai-pricing-template-glass_frost.ai-pricing-layout-spotlight .ai-pricing-summary {
+    color: #334155;
+}
+
+@media (max-width: 960px) {
+    .ai-pricing-layout-spotlight .ai-pricing-shell {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    .ai-pricing-layout-rows .pricing-row-main,
+    .ai-pricing-layout-spotlight .pricing-card-head {
+        flex-direction: column;
+    }
+
+    .ai-pricing-layout-rows .pricing-features {
+        flex-direction: column;
+    }
+}
