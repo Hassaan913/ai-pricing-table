@@ -12,9 +12,11 @@ $manual_data    = $table ? get_post_meta( $table_id, '_ai_pricing_data', true ) 
 $ai_json        = $table ? get_post_meta( $table_id, '_ai_pricing_json', true ) : '';
 $selected_tpl   = $table ? get_post_meta( $table_id, '_ai_template', true ) : 'basic_blue';
 $pricing_mode   = $table ? get_post_meta( $table_id, '_ai_pricing_mode', true ) : 'ai';
-$templates      = \AI_Pricing_Table\Templates::get_templates();
 $is_editing     = $table_id > 0;
 $is_pro         = function_exists( 'ai_pricing_table_is_pro' ) ? (bool) ai_pricing_table_is_pro() : false;
+$selected_tpl   = \AI_Pricing_Table\Templates::sanitize_template_key( $selected_tpl, $is_pro );
+$free_templates = \AI_Pricing_Table\Templates::get_free_templates();
+$pro_templates  = \AI_Pricing_Table\Templates::get_pro_templates();
 
 if ( ! in_array( $pricing_mode, [ 'ai', 'manual' ], true ) ) {
     $pricing_mode = ! empty( $manual_data ) ? 'manual' : 'ai';
@@ -114,17 +116,87 @@ ob_start();
 
     <div class="ai-admin-card">
         <h2>Template</h2>
-        <p>The selected template changes the frontend styling class used by the shortcode output.</p>
-        <div class="ai-template-grid">
-            <?php foreach ( $templates as $template_key => $template ) : ?>
-                <label class="ai-template-option <?php echo ! empty( $template['pro'] ) ? 'is-pro' : ''; ?>">
-                    <input type="radio" name="ai_template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $selected_tpl, $template_key ); ?> <?php disabled( ! empty( $template['pro'] ) ); ?> />
-                    <span class="ai-template-name"><?php echo esc_html( $template['name'] ); ?></span>
-                    <?php if ( ! empty( $template['pro'] ) ) : ?>
-                        <span class="ai-template-badge">Pro</span>
-                    <?php endif; ?>
-                </label>
-            <?php endforeach; ?>
+        <p>The selected template controls the visual skin applied by the shared shortcode renderer. Free and Pro availability is managed from the template registry.</p>
+
+        <div class="ai-template-section">
+            <div class="ai-template-section-head">
+                <h3>Free Templates</h3>
+                <span class="ai-template-section-meta"><?php echo esc_html( count( $free_templates ) ); ?> included</span>
+            </div>
+            <div class="ai-template-grid">
+                <?php foreach ( $free_templates as $template_key => $template ) : ?>
+                    <label class="ai-template-option">
+                        <input type="radio" name="ai_template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $selected_tpl, $template_key ); ?> />
+                        <span
+                            class="ai-template-card"
+                            style="
+                                --ai-template-preview-bg: <?php echo esc_attr( $template['preview']['bg'] ); ?>;
+                                --ai-template-preview-surface: <?php echo esc_attr( $template['preview']['surface'] ); ?>;
+                                --ai-template-preview-accent: <?php echo esc_attr( $template['preview']['accent'] ); ?>;
+                                --ai-template-preview-text: <?php echo esc_attr( $template['preview']['text'] ); ?>;
+                            "
+                        >
+                            <span class="ai-template-preview" aria-hidden="true">
+                                <span class="ai-template-preview-top"></span>
+                                <span class="ai-template-preview-cards">
+                                    <span></span>
+                                    <span class="is-featured"></span>
+                                    <span></span>
+                                </span>
+                            </span>
+                            <span class="ai-template-copy">
+                                <span class="ai-template-title-row">
+                                    <span class="ai-template-name"><?php echo esc_html( $template['name'] ); ?></span>
+                                    <span class="ai-template-badge is-free">Free</span>
+                                </span>
+                                <span class="ai-template-description"><?php echo esc_html( $template['description'] ); ?></span>
+                            </span>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="ai-template-section">
+            <div class="ai-template-section-head">
+                <h3>Pro Templates</h3>
+                <span class="ai-template-section-meta"><?php echo esc_html( count( $pro_templates ) ); ?> premium skins</span>
+            </div>
+            <div class="ai-template-grid">
+                <?php foreach ( $pro_templates as $template_key => $template ) : ?>
+                    <label class="ai-template-option is-pro">
+                        <input type="radio" name="ai_template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $selected_tpl, $template_key ); ?> <?php disabled( ! $is_pro ); ?> />
+                        <span
+                            class="ai-template-card"
+                            style="
+                                --ai-template-preview-bg: <?php echo esc_attr( $template['preview']['bg'] ); ?>;
+                                --ai-template-preview-surface: <?php echo esc_attr( $template['preview']['surface'] ); ?>;
+                                --ai-template-preview-accent: <?php echo esc_attr( $template['preview']['accent'] ); ?>;
+                                --ai-template-preview-text: <?php echo esc_attr( $template['preview']['text'] ); ?>;
+                            "
+                        >
+                            <span class="ai-template-preview" aria-hidden="true">
+                                <span class="ai-template-preview-top"></span>
+                                <span class="ai-template-preview-cards">
+                                    <span></span>
+                                    <span class="is-featured"></span>
+                                    <span></span>
+                                </span>
+                            </span>
+                            <span class="ai-template-copy">
+                                <span class="ai-template-title-row">
+                                    <span class="ai-template-name"><?php echo esc_html( $template['name'] ); ?></span>
+                                    <span class="ai-template-badge">Pro</span>
+                                </span>
+                                <span class="ai-template-description"><?php echo esc_html( $template['description'] ); ?></span>
+                            </span>
+                            <?php if ( ! $is_pro ) : ?>
+                                <span class="ai-template-lock">Upgrade to unlock</span>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 

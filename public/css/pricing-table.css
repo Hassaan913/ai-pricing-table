@@ -249,37 +249,6 @@
     box-shadow: 0 16px 42px rgba(15, 23, 42, 0.12);
 }
 
-.ai-pricing-template-basic_blue {
-    --ai-accent: #2563eb;
-    --ai-accent-strong: #1d4ed8;
-    --ai-highlight: #eff6ff;
-}
-
-.ai-pricing-template-modern_green {
-    --ai-bg: linear-gradient(135deg, #052e2b 0%, #134e4a 100%);
-    --ai-accent: #10b981;
-    --ai-accent-strong: #059669;
-    --ai-highlight: #ecfdf5;
-}
-
-.ai-pricing-template-dark_pro {
-    --ai-bg: linear-gradient(135deg, #020617 0%, #111827 100%);
-    --ai-surface: #111827;
-    --ai-surface-alt: #0f172a;
-    --ai-border: rgba(148, 163, 184, 0.18);
-    --ai-text: #e5eefc;
-    --ai-muted: #94a3b8;
-    --ai-accent: #f97316;
-    --ai-accent-strong: #ea580c;
-    --ai-highlight: #172033;
-}
-
-.ai-pricing-template-dark_pro .pricing-card,
-.ai-pricing-template-dark_pro .btn:hover,
-.ai-pricing-template-dark_pro .btn:focus {
-    color: var(--ai-text);
-}
-
 @media (max-width: 782px) {
     .ai-pricing-wrapper {
         padding: 24px;

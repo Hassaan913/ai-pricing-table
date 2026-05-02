@@ -492,10 +492,9 @@ class Admin {
     }
 
     private function sanitize_template_key( $template ) {
-        $template   = sanitize_key( is_string( $template ) ? $template : '' );
-        $templates  = \AI_Pricing_Table\Templates::get_templates();
+        $is_pro = function_exists( 'ai_pricing_table_is_pro' ) ? (bool) ai_pricing_table_is_pro() : false;
 
-        return isset( $templates[ $template ] ) ? $template : 'basic_blue';
+        return \AI_Pricing_Table\Templates::sanitize_template_key( $template, $is_pro );
     }
 
     private function get_current_table() {

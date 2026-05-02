@@ -34,10 +34,9 @@ class Shortcode {
         $ai       = get_post_meta( $post_id, '_ai_pricing_json', true );
         $template = get_post_meta( $post_id, '_ai_template', true );
         $mode     = get_post_meta( $post_id, '_ai_pricing_mode', true );
+        $is_pro   = function_exists( 'ai_pricing_table_is_pro' ) ? (bool) ai_pricing_table_is_pro() : false;
 
-        if ( empty( $template ) ) {
-            $template = 'basic_blue';
-        }
+        $template = Templates::sanitize_template_key( $template, $is_pro );
 
         if ( ! in_array( $mode, [ 'ai', 'manual' ], true ) ) {
             $mode = ! empty( $manual ) ? 'manual' : 'ai';

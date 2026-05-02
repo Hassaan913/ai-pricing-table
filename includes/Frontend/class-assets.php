@@ -42,6 +42,13 @@ class Assets {
             AI_PRICING_TABLE_VERSION
         );
 
+        wp_enqueue_style(
+            'ai-pricing-template-style',
+            AI_PRICING_TABLE_URL . 'public/css/pricing-table-templates.css',
+            [ 'ai-pricing-style' ],
+            AI_PRICING_TABLE_VERSION
+        );
+
         wp_enqueue_script(
             'ai-pricing-js',
             AI_PRICING_TABLE_URL . 'public/js/pricing-table.js',
@@ -73,6 +80,13 @@ class Assets {
             'ai-pricing-preview-style',
             AI_PRICING_TABLE_URL . 'public/css/pricing-table.css',
             [],
+            AI_PRICING_TABLE_VERSION
+        );
+
+        wp_enqueue_style(
+            'ai-pricing-preview-template-style',
+            AI_PRICING_TABLE_URL . 'public/css/pricing-table-templates.css',
+            [ 'ai-pricing-preview-style' ],
             AI_PRICING_TABLE_VERSION
         );
 
