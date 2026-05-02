@@ -20,20 +20,27 @@
             if (feature && typeof feature === "object") {
                 return {
                     id: store.normalizeId(feature.id, "feature"),
-                    label: String(feature.label || feature.title || feature.name || "Feature")
+                    label: String(feature.label || feature.title || feature.name || "Feature"),
+                    icon: store.normalizeIcon(feature.icon || "")
                 };
             }
 
             return {
                 id: store.nextId("feature"),
-                label: String(feature || ("Feature " + (index + 1)))
+                label: String(feature || ("Feature " + (index + 1))),
+                icon: ""
             };
         }
 
-        function setFeatureField(featureId, value) {
+        function setFeatureField(featureId, field, value) {
             const feature = getFeatureById(featureId);
 
             if (!feature) {
+                return;
+            }
+
+            if (field === "icon") {
+                feature.icon = store.normalizeIcon(value);
                 return;
             }
 

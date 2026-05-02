@@ -39,9 +39,9 @@ class Settings {
      */
     public function settings_page() {
         $gemini_key = get_option( 'ai_pricing_gemini_key', '' );
-        $business   = $_POST['test_business'] ?? 'AI Content Writer Pro';
-        $audience   = $_POST['test_audience'] ?? 'Freelancers and bloggers';
-        $features   = $_POST['test_features'] ?? 'AI article writing, SEO optimization, Plagiarism checker, Team collaboration';
+        $business   = isset( $_POST['test_business'] ) ? sanitize_text_field( wp_unslash( $_POST['test_business'] ) ) : 'AI Content Writer Pro';
+        $audience   = isset( $_POST['test_audience'] ) ? sanitize_text_field( wp_unslash( $_POST['test_audience'] ) ) : 'Freelancers and bloggers';
+        $features   = isset( $_POST['test_features'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_features'] ) ) : 'AI article writing, SEO optimization, Plagiarism checker, Team collaboration';
         ?>
         <div class="wrap">
             <h1>AI Pricing Table Settings</h1>
@@ -73,6 +73,7 @@ class Settings {
 
             <div class="card" style="max-width: 800px; padding: 20px; margin-top: 20px;">
                 <h2>2. Test AI Generation</h2>
+                <p>This test is preview-only. It does not create or save a pricing table.</p>
                 <form method="post" action="">
                     <?php wp_nonce_field( 'ai_test_nonce', 'ai_test_nonce' ); ?>
 
@@ -110,9 +111,9 @@ class Settings {
      */
     private function handle_test() {
         $business_info = [
-            'business_name' => sanitize_text_field( $_POST['test_business'] ?? '' ),
-            'audience'      => sanitize_text_field( $_POST['test_audience'] ?? '' ),
-            'features'      => sanitize_textarea_field( $_POST['test_features'] ?? '' ),
+            'business_name' => isset( $_POST['test_business'] ) ? sanitize_text_field( wp_unslash( $_POST['test_business'] ) ) : '',
+            'audience'      => isset( $_POST['test_audience'] ) ? sanitize_text_field( wp_unslash( $_POST['test_audience'] ) ) : '',
+            'features'      => isset( $_POST['test_features'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_features'] ) ) : '',
             'type'          => 'SaaS',
         ];
 
@@ -127,27 +128,11 @@ class Settings {
             echo '<p><strong>Tip:</strong> Add a Gemini API key or start Ollama locally.</p>';
         } else {
             echo '<pre style="background:#fff; padding:15px; border:1px solid #ddd; overflow:auto;">';
-            print_r( $result );
+            echo esc_html( wp_json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
             echo '</pre>';
 
             echo '<p style="color:green;"><strong>Success:</strong> AI returned structured pricing data.</p>';
-
-            $post_id = wp_insert_post( [
-                'post_type'   => 'ai_pricing_table',
-                'post_title'  => $business_info['business_name'] . ' Pricing',
-                'post_status' => 'publish',
-            ] );
-
-            if ( $post_id && ! is_wp_error( $post_id ) ) {
-                update_post_meta( $post_id, '_ai_pricing_json', wp_json_encode( $result ) );
-                update_post_meta( $post_id, '_ai_pricing_mode', 'ai' );
-                update_post_meta( $post_id, '_ai_template', 'basic_blue' );
-
-                echo '<p style="color:green;"><strong>Saved to hidden storage successfully.</strong></p>';
-                echo '<p>Post ID: ' . intval( $post_id ) . '</p>';
-            } else {
-                echo '<p style="color:red;"><strong>Failed to save hidden pricing table record.</strong></p>';
-            }
+            echo '<p>To keep this result, open <a href="' . esc_url( admin_url( 'admin.php?page=ai_pricing_add_new' ) ) . '">Add New Table</a> and generate there.</p>';
         }
 
         echo '</div>';

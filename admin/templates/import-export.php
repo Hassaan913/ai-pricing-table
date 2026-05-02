@@ -14,7 +14,7 @@ $tables = get_posts( [
 ob_start();
 ?>
 <h1>Import / Export</h1>
-<p>Download all pricing tables as a versioned JSON backup or import a previous export into this site.</p>
+<p>Download all pricing tables as a versioned JSON backup or import a previous export into this site. Imported tables remain shortcode-driven in this v1.</p>
 
 <div class="ai-admin-card">
     <h2>Export All Tables</h2>
@@ -42,12 +42,13 @@ ob_start();
 
 <div class="ai-admin-card">
     <h2>Format Notes</h2>
-    <ul>
-        <li>Exports include plugin version, schema version, site URL, and all saved pricing-table records.</li>
-        <li>Imports validate each table independently, so invalid entries are skipped without stopping the whole import.</li>
-        <li>Manual tables are migrated through the same normalization layer used by the builder and frontend renderer.</li>
-    </ul>
-</div>
+        <ul>
+            <li>Exports include plugin version, schema version, site URL, and all saved pricing-table records.</li>
+            <li>Imports validate each table independently, so invalid entries are skipped without stopping the whole import.</li>
+            <li>Manual tables are migrated through the same normalization layer used by the builder and frontend renderer.</li>
+            <li>Only JSON exports for this plugin and supported schema versions are accepted.</li>
+        </ul>
+    </div>
 <?php
 $content = ob_get_clean();
 

@@ -91,7 +91,12 @@
         });
 
         $(document).on("change", ".feature-title", function () {
-            featureManager.setFeatureField($(this).data("id"), $(this).val());
+            featureManager.setFeatureField($(this).data("id"), "label", $(this).val());
+            renderer.render();
+        });
+
+        $(document).on("change", ".feature-icon", function () {
+            featureManager.setFeatureField($(this).data("id"), "icon", $(this).val());
             renderer.render();
         });
 
@@ -141,7 +146,7 @@
             if (planId) {
                 planManager.setPlanField(planId, previewField, value);
             } else if (featureId) {
-                featureManager.setFeatureField(featureId, value);
+                featureManager.setFeatureField(featureId, "label", value);
             }
 
             persistence.saveData();
@@ -165,7 +170,7 @@
             if (planId) {
                 planManager.setPlanField(planId, previewField, value);
             } else if (featureId) {
-                featureManager.setFeatureField(featureId, value);
+                featureManager.setFeatureField(featureId, "label", value);
             }
 
             renderer.render();

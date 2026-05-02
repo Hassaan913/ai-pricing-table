@@ -82,9 +82,11 @@ function ai_pricing_normalize_manual_data( $data ) {
         if ( is_array( $feature ) ) {
             $label      = sanitize_text_field( $feature['label'] ?? $feature['title'] ?? $feature['name'] ?? '' );
             $feature_id = ai_pricing_sanitize_manual_id( $feature['id'] ?? '', 'feature', $feature_index + 1 );
+            $icon       = ai_pricing_sanitize_manual_icon( $feature['icon'] ?? '' );
         } else {
             $label      = sanitize_text_field( $feature );
             $feature_id = ai_pricing_sanitize_manual_id( '', 'feature', $feature_index + 1 );
+            $icon       = '';
         }
 
         if ( '' === $label ) {
@@ -101,6 +103,7 @@ function ai_pricing_normalize_manual_data( $data ) {
         $features[] = [
             'id'    => $feature_id,
             'label' => $label,
+            'icon'  => $icon,
         ];
 
         $feature_ids_by_index[ (string) $feature_index ] = $feature_id;

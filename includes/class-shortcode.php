@@ -7,8 +7,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Shortcode {
 
+    private const SHORTCODE_TAG = 'ai_pricing_table';
+
     public function __construct() {
-        add_shortcode( 'ai_pricing_table', [ $this, 'render' ] );
+        add_shortcode( self::SHORTCODE_TAG, [ $this, 'render' ] );
     }
 
     public function render( $atts ) {
@@ -19,7 +21,13 @@ class Shortcode {
         $post_id = empty( $atts['id'] ) ? $this->get_latest_table_id() : intval( $atts['id'] );
 
         if ( empty( $post_id ) ) {
-            return 'No pricing tables found.';
+            return 'No pricing tables found. Create one in AI Pricing and embed it with [ai_pricing_table id="123"].';
+        }
+
+        $post = get_post( $post_id );
+
+        if ( ! $post || 'ai_pricing_table' !== $post->post_type || 'publish' !== $post->post_status ) {
+            return 'Pricing table not found. Check the shortcode ID and try again.';
         }
 
         $manual   = get_post_meta( $post_id, '_ai_pricing_data', true );
@@ -43,7 +51,11 @@ class Shortcode {
             }
         }
 
-        return \ai_pricing_render_ai_table( $ai, $template );
+        $rendered = \ai_pricing_render_ai_table( $ai, $template );
+
+        return 'No pricing data found.' === $rendered
+            ? 'Pricing table data is incomplete. Edit and save the table again in AI Pricing.'
+            : $rendered;
     }
 
     private function get_latest_table_id() {

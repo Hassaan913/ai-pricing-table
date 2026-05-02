@@ -33,7 +33,8 @@
             const featureIndex = featureManager.getFeatureIndex(featureId);
             const clonedFeature = feature ? {
                 id: store.nextId("feature"),
-                label: (feature.label || "Feature") + " Copy"
+                label: (feature.label || "Feature") + " Copy",
+                icon: store.normalizeIcon(feature.icon || "")
             } : null;
 
             if (!clonedFeature) {

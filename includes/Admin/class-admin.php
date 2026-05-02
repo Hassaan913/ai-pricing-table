@@ -160,7 +160,7 @@ class Admin {
         $features      = isset( $_POST['ai_features'] ) ? sanitize_textarea_field( wp_unslash( $_POST['ai_features'] ) ) : '';
         $manual_data   = isset( $_POST['ai_manual_data'] ) ? wp_unslash( $_POST['ai_manual_data'] ) : '';
         $ai_json_raw   = isset( $_POST['ai_pricing_json'] ) ? wp_unslash( $_POST['ai_pricing_json'] ) : '';
-        $template      = isset( $_POST['ai_template'] ) ? sanitize_key( wp_unslash( $_POST['ai_template'] ) ) : 'basic_blue';
+        $template      = $this->sanitize_template_key( $_POST['ai_template'] ?? 'basic_blue' );
         $normalized_ai = \ai_pricing_normalize_ai_data( $ai_json_raw );
         $normalized_manual = \ai_pricing_normalize_manual_data( $manual_data );
 
@@ -174,6 +174,11 @@ class Admin {
             $pricing_mode = 'manual';
         }
 
+        if ( null === $normalized_manual && null === $normalized_ai ) {
+            wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_add_new', [ 'ai_notice' => 'invalid' ] ) );
+            exit;
+        }
+
         if ( empty( $title ) ) {
             $title = ! empty( $business_name ) ? $business_name . ' Pricing' : 'Untitled Pricing Table';
         }
@@ -185,6 +190,13 @@ class Admin {
         ];
 
         if ( $table_id > 0 ) {
+            $existing_table = $this->get_valid_table_post( $table_id );
+
+            if ( ! $existing_table || ! current_user_can( 'edit_post', $table_id ) ) {
+                wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_tables', [ 'ai_notice' => 'invalid' ] ) );
+                exit;
+            }
+
             $post_data['ID'] = $table_id;
             $saved_id = wp_update_post( $post_data, true );
         } else {
@@ -230,7 +242,9 @@ class Admin {
         $table_id = isset( $_GET['table_id'] ) ? absint( $_GET['table_id'] ) : 0;
         $nonce    = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 
-        if ( $table_id < 1 || ! wp_verify_nonce( $nonce, 'ai_pricing_delete_' . $table_id ) ) {
+        $table = $this->get_valid_table_post( $table_id );
+
+        if ( $table_id < 1 || ! wp_verify_nonce( $nonce, 'ai_pricing_delete_' . $table_id ) || ! $table || ! current_user_can( 'delete_post', $table_id ) ) {
             wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_tables', [ 'ai_notice' => 'invalid' ] ) );
             exit;
         }
@@ -245,14 +259,14 @@ class Admin {
         $table_id = isset( $_GET['table_id'] ) ? absint( $_GET['table_id'] ) : 0;
         $nonce    = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 
-        if ( $table_id < 1 || ! wp_verify_nonce( $nonce, 'ai_pricing_duplicate_' . $table_id ) ) {
+        if ( $table_id < 1 || ! wp_verify_nonce( $nonce, 'ai_pricing_duplicate_' . $table_id ) || ! current_user_can( 'edit_post', $table_id ) ) {
             wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_tables', [ 'ai_notice' => 'invalid' ] ) );
             exit;
         }
 
-        $original = get_post( $table_id );
+        $original = $this->get_valid_table_post( $table_id );
 
-        if ( ! $original || 'ai_pricing_table' !== $original->post_type ) {
+        if ( ! $original ) {
             wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_tables', [ 'ai_notice' => 'invalid' ] ) );
             exit;
         }
@@ -342,10 +356,18 @@ class Admin {
     private function import_tables_from_request() {
         check_admin_referer( 'ai_pricing_import_tables', 'ai_pricing_import_export_nonce' );
 
-        $raw_import = isset( $_POST['ai_pricing_import_json'] ) ? wp_unslash( $_POST['ai_pricing_import_json'] ) : '';
+        $raw_import = isset( $_POST['ai_pricing_import_json'] ) ? trim( wp_unslash( $_POST['ai_pricing_import_json'] ) ) : '';
         $decoded    = json_decode( $raw_import, true );
 
-        if ( ! is_array( $decoded ) || empty( $decoded['tables'] ) || ! is_array( $decoded['tables'] ) ) {
+        if ( '' === $raw_import || JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) || empty( $decoded['tables'] ) || ! is_array( $decoded['tables'] ) ) {
+            wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_import_export', [ 'ai_notice' => 'invalid' ] ) );
+            exit;
+        }
+
+        $plugin_slug = isset( $decoded['plugin'] ) ? sanitize_key( $decoded['plugin'] ) : '';
+        $schema      = isset( $decoded['schema_version'] ) ? absint( $decoded['schema_version'] ) : 0;
+
+        if ( ( '' !== $plugin_slug && 'ai-pricing-table' !== $plugin_slug ) || ( 0 !== $schema && $schema > 2 ) ) {
             wp_safe_redirect( $this->get_admin_page_url( 'ai_pricing_import_export', [ 'ai_notice' => 'invalid' ] ) );
             exit;
         }
@@ -404,7 +426,7 @@ class Admin {
         $business_name = sanitize_text_field( $table_payload['business_name'] ?? '' );
         $audience      = sanitize_text_field( $table_payload['audience'] ?? '' );
         $features      = sanitize_textarea_field( $table_payload['features'] ?? '' );
-        $template      = sanitize_key( $table_payload['template'] ?? 'basic_blue' );
+        $template      = $this->sanitize_template_key( $table_payload['template'] ?? 'basic_blue' );
         $pricing_mode  = sanitize_key( $table_payload['pricing_mode'] ?? 'manual' );
         $manual_data   = \ai_pricing_normalize_manual_data( $table_payload['manual_data'] ?? null );
         $ai_data       = \ai_pricing_normalize_ai_data( $table_payload['ai_data'] ?? null );
@@ -455,9 +477,7 @@ class Admin {
         return add_query_arg( $args, admin_url( 'admin.php?page=' . $page ) );
     }
 
-    private function get_current_table() {
-        $table_id = isset( $_GET['table_id'] ) ? absint( $_GET['table_id'] ) : 0;
-
+    private function get_valid_table_post( $table_id ) {
         if ( $table_id < 1 ) {
             return null;
         }
@@ -469,6 +489,19 @@ class Admin {
         }
 
         return $table;
+    }
+
+    private function sanitize_template_key( $template ) {
+        $template   = sanitize_key( is_string( $template ) ? $template : '' );
+        $templates  = \AI_Pricing_Table\Templates::get_templates();
+
+        return isset( $templates[ $template ] ) ? $template : 'basic_blue';
+    }
+
+    private function get_current_table() {
+        $table_id = isset( $_GET['table_id'] ) ? absint( $_GET['table_id'] ) : 0;
+
+        return $this->get_valid_table_post( $table_id );
     }
 
     public function render_add_new_page() {

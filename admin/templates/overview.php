@@ -8,10 +8,11 @@ $published   = isset( $table_count->publish ) ? intval( $table_count->publish ) 
 
 $content = '
     <h1>Overview</h1>
-    <p>Manage pricing tables from a custom plugin workflow. The WordPress post editor is no longer part of the main experience.</p>
+    <p>Manage pricing tables from a custom plugin workflow. The WordPress post editor is no longer part of the main experience, and v1 is shortcode-only.</p>
     <div class="ai-admin-card">
         <h2>Current Status</h2>
         <p><strong>Saved Tables:</strong> ' . esc_html( $published ) . '</p>
+        <p><strong>How to use:</strong> Create a table, copy its shortcode, and paste it into any page, post, or widget.</p>
         <p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=ai_pricing_add_new' ) ) . '">Create New Table</a></p>
         <p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=ai_pricing_tables' ) ) . '">View All Tables</a></p>
     </div>

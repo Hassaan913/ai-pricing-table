@@ -127,7 +127,8 @@
 }
 
 .plan-item input,
-.feature-item input {
+.feature-item input,
+.feature-item select {
     flex: 1;
 }
 
@@ -147,8 +148,18 @@
 }
 
 .feature-item {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) minmax(160px, 0.8fr) auto auto auto;
     align-items: center;
+}
+
+.ai-feature-icon-select-wrap {
+    display: block;
+}
+
+.ai-feature-icon-label {
+    color: #646970;
+    font-size: 12px;
+    white-space: nowrap;
 }
 
 .plan-field-title {

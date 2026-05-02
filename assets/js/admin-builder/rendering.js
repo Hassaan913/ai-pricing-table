@@ -12,6 +12,27 @@
         const persistence = opts.persistence;
 
         const escapeHtml = api.utils.escapeHtml;
+        const featureIcons = window.aiPricingManualIcons || {};
+
+        function getFeatureIconOptions(selectedIcon) {
+            let html = '<option value="">No icon</option>';
+
+            Object.keys(featureIcons).forEach(function (slug) {
+                const icon = featureIcons[slug] || {};
+                const selected = slug === selectedIcon ? ' selected' : '';
+                html += '<option value="' + escapeHtml(slug) + '"' + selected + '>' + escapeHtml(icon.label || slug) + '</option>';
+            });
+
+            return html;
+        }
+
+        function getFeatureIconSvg(iconSlug) {
+            if (!iconSlug || !featureIcons[iconSlug] || !featureIcons[iconSlug].svg) {
+                return "";
+            }
+
+            return featureIcons[iconSlug].svg;
+        }
 
         function getStatusMarkup() {
             const validation = persistence.getValidation();
@@ -100,12 +121,21 @@
             let html = "";
 
             store.state.features.forEach(function (feature) {
+                const currentIcon = String(feature.icon || "");
+                const currentIconLabel = currentIcon && featureIcons[currentIcon] ? featureIcons[currentIcon].label : "No icon";
                 html += `
                 <div class="feature-item" data-id="${escapeHtml(feature.id)}">
                     <button type="button" class="button-link ai-drag-handle" aria-label="Drag feature">
                         <span class="dashicons dashicons-move"></span>
                     </button>
                     <input type="text" value="${escapeHtml(feature.label)}" data-id="${escapeHtml(feature.id)}" class="feature-title" placeholder="Feature">
+                    <label class="ai-feature-icon-select-wrap">
+                        <span class="screen-reader-text">Feature icon</span>
+                        <select class="feature-icon" data-id="${escapeHtml(feature.id)}" aria-label="Feature icon">
+                            ${getFeatureIconOptions(currentIcon)}
+                        </select>
+                    </label>
+                    <span class="ai-feature-icon-label">${escapeHtml(currentIconLabel)}</span>
                     <button type="button" class="button duplicate-feature" data-id="${escapeHtml(feature.id)}">Duplicate</button>
                     <button type="button" class="button remove-feature" data-id="${escapeHtml(feature.id)}">Remove</button>
                 </div>
@@ -270,8 +300,10 @@
                     html += '<li class="ai-preview-empty-feature">No enabled features yet</li>';
                 } else {
                     enabledFeatures.forEach(function (feature) {
+                        const iconSvg = getFeatureIconSvg(feature.icon);
                         html += `
-                        <li>
+                        <li class="${iconSvg ? "has-icon" : ""}">
+                            ${iconSvg ? `<span class="ai-feature-icon" aria-hidden="true">${iconSvg}</span>` : ""}
                             <span
                                 class="ai-preview-editable"
                                 contenteditable="true"

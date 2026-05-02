@@ -7,12 +7,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Assets {
 
+    private bool $should_enqueue_public_assets = false;
+
     public function hooks() {
+        add_action( 'wp', [ $this, 'detect_public_asset_need' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_public_assets' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
     }
 
+    public function detect_public_asset_need() {
+        if ( is_admin() ) {
+            return;
+        }
+
+        global $wp_query;
+
+        foreach ( (array) ( $wp_query->posts ?? [] ) as $post ) {
+            if ( $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'ai_pricing_table' ) ) {
+                $this->should_enqueue_public_assets = true;
+                break;
+            }
+        }
+    }
+
     public function enqueue_public_assets() {
+        if ( ! $this->should_enqueue_public_assets ) {
+            return;
+        }
+
         wp_enqueue_style(
             'ai-pricing-style',
             AI_PRICING_TABLE_URL . 'public/css/pricing-table.css',
@@ -38,6 +60,12 @@ class Assets {
         );
 
         if ( false === strpos( (string) $hook, 'ai_pricing' ) ) {
+            return;
+        }
+
+        $current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+        if ( 'ai_pricing_add_new' !== $current_page ) {
             return;
         }
 

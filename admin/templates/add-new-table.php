@@ -23,7 +23,7 @@ if ( ! in_array( $pricing_mode, [ 'ai', 'manual' ], true ) ) {
 ob_start();
 ?>
 <h1><?php echo esc_html( $is_editing ? 'Edit Table' : 'Add New Table' ); ?></h1>
-<p>Create and save pricing tables without opening the default WordPress post editor.</p>
+<p>Create and save pricing tables without opening the default WordPress post editor. This v1 ships as shortcode-only.</p>
 
 <form method="post" action="">
     <?php wp_nonce_field( 'ai_pricing_save_table', 'ai_pricing_nonce' ); ?>
@@ -33,6 +33,11 @@ ob_start();
 
     <div class="ai-admin-card">
         <h2>Table Details</h2>
+        <?php if ( $is_editing ) : ?>
+            <p><strong>Embed shortcode:</strong> <code>[ai_pricing_table id="<?php echo esc_html( (string) $table_id ); ?>"]</code></p>
+        <?php else : ?>
+            <p><strong>Embed shortcode:</strong> Save this table first, then copy the generated shortcode into any page, post, or widget.</p>
+        <?php endif; ?>
         <table class="form-table">
             <tr>
                 <th scope="row"><label for="table_title">Table Title</label></th>
@@ -109,7 +114,7 @@ ob_start();
 
     <div class="ai-admin-card">
         <h2>Template</h2>
-        <p>The selected template now changes the frontend styling class for the pricing table.</p>
+        <p>The selected template changes the frontend styling class used by the shortcode output.</p>
         <div class="ai-template-grid">
             <?php foreach ( $templates as $template_key => $template ) : ?>
                 <label class="ai-template-option <?php echo ! empty( $template['pro'] ) ? 'is-pro' : ''; ?>">
@@ -135,6 +140,7 @@ window.aiPricingExistingData = {
     ai: <?php echo wp_json_encode( $ai_json ); ?>,
     mode: <?php echo wp_json_encode( $pricing_mode ); ?>
 };
+window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_feature_icons_for_js() ); ?>;
 </script>
 
 <script>

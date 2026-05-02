@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/Helpers/sanitize.php';
+require_once __DIR__ . '/Helpers/icons.php';
 require_once __DIR__ . '/Helpers/normalize-ai.php';
 require_once __DIR__ . '/Helpers/normalize-manual.php';
 require_once __DIR__ . '/Helpers/presentation.php';

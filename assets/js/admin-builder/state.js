@@ -33,6 +33,19 @@
             return normalized || store.nextId(prefix);
         };
 
+        store.getManualIcons = function getManualIcons() {
+            return window.aiPricingManualIcons || {};
+        };
+
+        store.normalizeIcon = function normalizeIcon(value) {
+            const normalized = String(value || "")
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+
+            return Object.prototype.hasOwnProperty.call(store.getManualIcons(), normalized) ? normalized : "";
+        };
+
         store.getTemplateClass = function getTemplateClass() {
             const currentTemplate = $("input[name='ai_template']:checked").val() || store.previewTemplate;
             return "ai-pricing-template-" + currentTemplate;

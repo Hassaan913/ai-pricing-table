@@ -150,9 +150,20 @@
 
 .pricing-features li {
     position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     margin: 0 0 12px;
     padding-left: 22px;
     color: var(--ai-text);
+}
+
+.pricing-features li.has-icon {
+    padding-left: 0;
+}
+
+.pricing-features li.has-icon::before {
+    display: none;
 }
 
 .pricing-features li::before {
@@ -164,6 +175,25 @@
     height: 8px;
     border-radius: 999px;
     background: var(--ai-accent);
+}
+
+.ai-feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: var(--ai-accent);
+    flex: 0 0 18px;
+}
+
+.ai-feature-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ai-feature-label {
+    min-width: 0;
 }
 
 .btn {

@@ -69,7 +69,13 @@ function ai_pricing_render_manual_table( $data, $template = 'basic_blue' ) {
                             <?php if ( empty( $data['matrix'][ $key ] ) ) : ?>
                                 <?php continue; ?>
                             <?php endif; ?>
-                            <li><?php echo esc_html( $feature['label'] ); ?></li>
+                            <?php $icon_svg = ai_pricing_get_manual_feature_icon_svg( $feature['icon'] ?? '' ); ?>
+                            <li class="<?php echo '' !== $icon_svg ? 'has-icon' : ''; ?>">
+                                <?php if ( '' !== $icon_svg ) : ?>
+                                    <span class="ai-feature-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                <?php endif; ?>
+                                <span class="ai-feature-label"><?php echo esc_html( $feature['label'] ); ?></span>
+                            </li>
                         <?php endforeach; ?>
                     </ul>
 

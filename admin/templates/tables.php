@@ -65,6 +65,7 @@ ob_start();
                                 class="button button-small ai-copy-shortcode"
                                 data-shortcode="<?php echo esc_attr( $shortcode ); ?>"
                             >Copy</button>
+                            <div><small>Paste this shortcode into any page, post, or widget.</small></div>
                         </td>
                         <td><?php echo esc_html( get_the_date( '', $table ) ); ?></td>
                         <td>
