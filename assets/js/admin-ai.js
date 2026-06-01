@@ -3,7 +3,7 @@ jQuery(function ($) {
     const $result = $("#ai-pricing-result");
     const $jsonField = $("#ai_pricing_json");
     const $modeField = $("input[name='ai_pricing_mode'][value='ai']");
-    const $preview = $("#ai-ai-preview");
+    const $preview = $("#ai-live-preview");
     const isPro = !!(window.aiPricingAdmin && window.aiPricingAdmin.isPro);
     const templateRegistry = window.aiPricingTemplates || {};
     let currentAi = null;
@@ -349,7 +349,7 @@ jQuery(function ($) {
         });
     });
 
-    $(document).on("click", "#ai-ai-preview .ai-toggle button", function () {
+    $(document).on("click", "#ai-live-preview .ai-toggle button", function () {
         const $wrapper = $(this).closest(".ai-pricing-wrapper");
         const type = $(this).data("type") === "yearly" ? "yearly" : "monthly";
         $wrapper.attr("data-billing", type);
@@ -357,14 +357,14 @@ jQuery(function ($) {
         $(this).addClass("active");
     });
 
-    $(document).on("keydown", "#ai-ai-preview .ai-ai-preview-editable", function (event) {
+    $(document).on("keydown", "#ai-live-preview .ai-ai-preview-editable", function (event) {
         if (event.key === "Enter") {
             event.preventDefault();
             $(this).blur();
         }
     });
 
-    $(document).on("input", "#ai-ai-preview .ai-ai-preview-editable", function () {
+    $(document).on("input", "#ai-live-preview .ai-ai-preview-editable", function () {
         const $field = $(this);
         const tierIndex = parseInt($field.data("ai-tier-index"), 10);
         const featureIndexRaw = $field.data("ai-feature-index");
@@ -381,7 +381,7 @@ jQuery(function ($) {
         persistCurrentAi();
     });
 
-    $(document).on("blur", "#ai-ai-preview .ai-ai-preview-editable", function () {
+    $(document).on("blur", "#ai-live-preview .ai-ai-preview-editable", function () {
         // Normalize empty fields to safe defaults and re-render.
         const $field = $(this);
         const tierIndex = parseInt($field.data("ai-tier-index"), 10);
@@ -408,7 +408,7 @@ jQuery(function ($) {
         renderAiPreview(currentAi);
     });
 
-    $(document).on("change", "#ai-ai-preview .ai-plan-url-inline", function () {
+    $(document).on("change", "#ai-live-preview .ai-plan-url-inline", function () {
         const tierIndex = parseInt($(this).data("ai-tier-index"), 10);
         const url = String($(this).val() || "").trim() || "#";
         updateAiValue({

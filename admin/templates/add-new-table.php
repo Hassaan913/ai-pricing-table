@@ -92,27 +92,6 @@ ob_start();
             </p>
             <div id="ai-pricing-result" class="ai-result-box"></div>
         </div>
-
-        <div class="ai-admin-card">
-            <h2>Live Preview (AI)</h2>
-            <p>
-                This preview updates after AI generation and when you switch templates.
-                <?php if ( ! $is_pro ) : ?>
-                    <br><strong>Pro:</strong> Inline editing inside the AI preview is locked for Pro users.
-                <?php endif; ?>
-            </p>
-            <div id="ai-ai-preview" class="ai-preview-container">
-                <?php
-                // Show initial preview if we have AI data
-                if ( ! empty( $ai_json ) ) {
-                    $ai_data = json_decode( $ai_json, true );
-                    if ( JSON_ERROR_NONE === json_last_error() && is_array( $ai_data ) ) {
-                        echo \ai_pricing_render_ai_table( $ai_data, $selected_tpl );
-                    }
-                }
-                ?>
-            </div>
-        </div>
     </div>
 
     <div class="ai-pricing-mode-panel ai-pricing-mode-panel-manual" data-mode-panel="manual">
@@ -123,20 +102,25 @@ ob_start();
             <input type="hidden" name="ai_manual_data" id="ai_manual_data" value="<?php echo esc_attr( $manual_data ); ?>" />
         </div>
 
-        <div class="ai-admin-card">
-            <h2>Live Preview (Manual)</h2>
-            <p>This preview updates when you make changes to the manual builder and when you switch templates.</p>
-            <div id="ai-manual-preview" class="ai-preview-container">
-                <?php
-                // Show initial preview if we have manual data
-                if ( ! empty( $manual_data ) ) {
-                    $manual_data_decoded = json_decode( $manual_data, true );
-                    if ( JSON_ERROR_NONE === json_last_error() && is_array( $manual_data_decoded ) ) {
-                        echo \ai_pricing_render_manual_table( $manual_data_decoded, $selected_tpl );
-                    }
+    </div>
+
+    <div class="ai-admin-card">
+        <h2>Live Preview</h2>
+        <p>This preview updates when you generate AI pricing, edit manual builder content, or switch templates.</p>
+        <div id="ai-live-preview" class="ai-preview-container">
+            <?php
+            if ( 'manual' === $pricing_mode && ! empty( $manual_data ) ) {
+                $manual_data_decoded = json_decode( $manual_data, true );
+                if ( JSON_ERROR_NONE === json_last_error() && is_array( $manual_data_decoded ) ) {
+                    echo \ai_pricing_render_manual_table( $manual_data_decoded, $selected_tpl );
                 }
-                ?>
-            </div>
+            } elseif ( ! empty( $ai_json ) ) {
+                $ai_data = json_decode( $ai_json, true );
+                if ( JSON_ERROR_NONE === json_last_error() && is_array( $ai_data ) ) {
+                    echo \ai_pricing_render_ai_table( $ai_data, $selected_tpl );
+                }
+            }
+            ?>
         </div>
     </div>
 
@@ -264,10 +248,20 @@ window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_f
         var target = event.target;
         if (!target || target.name !== "ai_pricing_mode") return;
         applyMode(target.value);
+        if (target.value === 'ai') {
+            updateAiPreview();
+        } else if (target.value === 'manual') {
+            updateManualPreview();
+        }
     });
 
     // Apply on load using saved mode.
     applyMode(getMode());
+    if (getMode() === 'ai') {
+        updateAiPreview();
+    } else {
+        updateManualPreview();
+    }
 
     // Keep in sync with other scripts that programmatically toggle modes.
     document.addEventListener("click", function (event) {
@@ -295,7 +289,10 @@ window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_f
 
         template = template.value;
 
-        var previewContainer = document.getElementById('ai-ai-preview');
+        var previewContainer = document.getElementById('ai-live-preview');
+        if (!previewContainer) {
+            return;
+        }
         previewContainer.innerHTML = '<p>Loading preview...</p>';
 
         var data = new FormData();
@@ -334,8 +331,10 @@ window.aiPricingManualIcons = <?php echo wp_json_encode( ai_pricing_get_manual_f
 
         template = template.value;
 
-        var previewContainer = document.getElementById('ai-manual-preview');
-        if (!previewContainer) return;
+        var previewContainer = document.getElementById('ai-live-preview');
+        if (!previewContainer) {
+            return;
+        }
 
         previewContainer.innerHTML = '<p>Loading preview...</p>';
 

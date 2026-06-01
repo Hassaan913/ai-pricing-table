@@ -58,6 +58,9 @@
         persistence.hydrateState($dataField.val());
         store.initialSerialized = persistence.serializeState();
         renderer.render();
+
+        api.store = store;
+        api.renderer = renderer;
     }
 
     api.boot = boot;

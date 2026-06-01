@@ -47,14 +47,12 @@
         };
 
         store.getTemplateClass = function getTemplateClass() {
-            const currentTemplate = $("input[name='ai_template']:checked").val() || store.previewTemplate;
-            return "ai-pricing-template-" + currentTemplate;
+            return "ai-pricing-template-" + store.previewTemplate;
         };
 
         store.getTemplateLayout = function getTemplateLayout() {
-            const currentTemplate = $("input[name='ai_template']:checked").val() || store.previewTemplate;
             const templates = window.aiPricingTemplates || {};
-            return templates[currentTemplate] && templates[currentTemplate].layout ? templates[currentTemplate].layout : "cards";
+            return templates[store.previewTemplate] && templates[store.previewTemplate].layout ? templates[store.previewTemplate].layout : "cards";
         };
 
         store.getLayoutClass = function getLayoutClass() {

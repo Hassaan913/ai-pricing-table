@@ -211,7 +211,7 @@
         }
 
         function renderPreview() {
-            const $preview = $("#ai-manual-preview");
+            const $preview = $("#ai-live-preview");
 
             if (!$preview.length) {
                 return;
@@ -534,14 +534,6 @@
                         <h3>Matrix</h3>
                         <div id="matrix"></div>
                     </div>
-                </div>
-
-                <div class="ai-builder-preview-panel">
-                    <div class="ai-builder-preview-head">
-                        <h3>Live Preview</h3>
-                        <p>Drag in the builder, toggle features here, edit text inline, and switch monthly/yearly preview states.</p>
-                    </div>
-                    <div id="ai-manual-preview"></div>
                 </div>
             </div>
         `);
